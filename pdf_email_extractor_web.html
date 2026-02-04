@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Email Extractor - Random 200 Emails</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 50px 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #f5f7ff 0%, #f0f2ff 100%);
+        }
+
+        .upload-area:hover {
+            background: linear-gradient(135deg, #e8ebff 0%, #dde1ff 100%);
+            border-color: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .upload-area.dragover {
+            background: linear-gradient(135deg, #dde1ff 0%, #d0d5ff 100%);
+            border-color: #28a745;
+        }
+
+        .upload-area input {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-box .number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-box .label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 5px;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+
+        .progress-container {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 35px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .email-preview {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            background: #f9f9f9;
+        }
+
+        .email-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .email-item:hover {
+            background: #f0f2ff;
+            transform: translateX(5px);
+        }
+
+        .email-domain {
+            color: #666;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+
+        .badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-provider {
+            background: #17a2b8;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .file-info {
+            background: #f0f2ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .file-info strong {
+            color: #667eea;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📄 PDF Email Extractor</h1>
+            <p>Extract and randomly select 200 unique emails from PDF files</p>
+        </div>
+
+        <!-- Statistics -->
+        <div class="card">
+            <h2>📊 Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="number" id="totalEmails">0</div>
+                    <div class="label">Total Found</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number" id="selectedCount">0</div>
+                    <div class="label">Selected</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number" id="previousCount">0</div>
+                    <div class="label">Previously Used</div>
+                </div>
+                <div class="stat-box">
+                    <div class="number" id="availableCount">0</div>
+                    <div class="label">Available</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Area -->
+        <div class="card">
+            <h2>📤 Upload PDF File</h2>
+            
+            <div class="alert alert-info">
+                <span>ℹ️</span>
+                <div>
+                    <strong>How it works:</strong> Upload your PDF file, and the system will extract all email addresses. 
+                    Then randomly select 200 unique emails without repeating previously selected ones.
+                </div>
+            </div>
+
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('pdfFile').click()">
+                <input type="file" id="pdfFile" accept=".pdf" onchange="handleFileUpload(event)">
+                <div class="upload-icon">📄</div>
+                <h3>Click to Upload PDF or Drag & Drop</h3>
+                <p style="color: #666; margin-top: 10px;">Maximum file size: 50MB</p>
+            </div>
+
+            <div id="fileInfo" class="file-info hidden">
+                <strong>File:</strong> <span id="fileName"></span><br>
+                <strong>Size:</strong> <span id="fileSize"></span>
+            </div>
+
+            <div id="processingAlert" class="alert alert-info hidden">
+                <div class="loading"></div>
+                <div>Processing PDF file... This may take a moment.</div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn" id="extractBtn" onclick="extractEmails()" disabled>
+                    🔍 Extract Emails from PDF
+                </button>
+                <button class="btn btn-success" id="selectBtn" onclick="selectRandom200()" disabled>
+                    🎲 Select Random 200
+                </button>
+                <button class="btn btn-danger" onclick="resetHistory()">
+                    ⚠️ Reset History
+                </button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="card hidden" id="resultsCard">
+            <h2>✅ Extracted Emails</h2>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar" style="width: 0%">0 / 200</div>
+                </div>
+            </div>
+
+            <div id="resultAlert"></div>
+
+            <div class="button-group">
+                <button class="btn btn-success" onclick="exportToExcel()">
+                    📥 Download Excel File
+                </button>
+                <button class="btn" onclick="copyEmails()">
+                    📋 Copy All Emails
+                </button>
+                <button class="btn btn-secondary" onclick="toggleEmailList()">
+                    👁️ <span id="toggleText">Show Emails</span>
+                </button>
+            </div>
+
+            <div id="emailPreview" class="email-preview hidden"></div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        // Global variables
+        let allEmails = new Set();
+        let selectedEmails = [];
+        let previouslySelected = new Set();
+        let currentFile = null;
+        const STORAGE_KEY = 'pdf_email_history';
+
+        // PDF.js setup
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Load history on page load
+        window.onload = function() {
+            loadHistory();
+            updateStats();
+        };
+
+        function loadHistory() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                previouslySelected = new Set(JSON.parse(saved));
+            }
+        }
+
+        function saveHistory() {
+            const combined = new Set([...previouslySelected, ...selectedEmails]);
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([...combined]));
+            previouslySelected = combined;
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                currentFile = file;
+                
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                document.getElementById('fileInfo').classList.remove('hidden');
+                document.getElementById('extractBtn').disabled = false;
+                
+                // Auto-extract emails
+                extractEmails();
+            } else {
+                alert('Please upload a valid PDF file!');
+            }
+        }
+
+        async function extractEmails() {
+            if (!currentFile) {
+                alert('Please upload a PDF file first!');
+                return;
+            }
+
+            document.getElementById('processingAlert').classList.remove('hidden');
+            document.getElementById('extractBtn').disabled = true;
+            allEmails.clear();
+
+            try {
+                const arrayBuffer = await currentFile.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+                
+                let fullText = '';
+                
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + ' ';
+                }
+
+                // Extract emails using regex
+                const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+                const found = fullText.match(emailPattern) || [];
+                
+                found.forEach(email => allEmails.add(email.toLowerCase()));
+
+                document.getElementById('processingAlert').classList.add('hidden');
+                document.getElementById('extractBtn').disabled = false;
+                document.getElementById('selectBtn').disabled = false;
+
+                updateStats();
+
+                if (allEmails.size > 0) {
+                    showAlert('success', `✅ Found ${allEmails.size} unique emails in the PDF!`);
+                } else {
+                    showAlert('warning', '⚠️ No emails found in this PDF file.');
+                }
+
+            } catch (error) {
+                document.getElementById('processingAlert').classList.add('hidden');
+                showAlert('error', '❌ Error processing PDF: ' + error.message);
+            }
+        }
+
+        function selectRandom200() {
+            if (allEmails.size === 0) {
+                alert('Please extract emails first!');
+                return;
+            }
+
+            const available = [...allEmails].filter(email => !previouslySelected.has(email));
+            
+            if (available.length === 0) {
+                alert('⚠️ All emails have been previously selected!\n\nOptions:\n1. Upload a different PDF\n2. Reset history');
+                return;
+            }
+
+            const count = Math.min(200, available.length);
+            selectedEmails = shuffleArray(available).slice(0, count);
+            
+            displayResults(count);
+            saveHistory();
+            updateStats();
+        }
+
+        function displayResults(count) {
+            document.getElementById('resultsCard').classList.remove('hidden');
+            
+            const percentage = (count / 200) * 100;
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('progressBar').textContent = `${count} / 200`;
+            
+            const message = count === 200 
+                ? '✅ Successfully selected 200 random emails!' 
+                : `✅ Selected ${count} emails (all available new emails)`;
+            
+            showAlert('success', message, 'resultAlert');
+            
+            document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function toggleEmailList() {
+            const preview = document.getElementById('emailPreview');
+            const toggleText = document.getElementById('toggleText');
+            
+            if (preview.classList.contains('hidden')) {
+                showEmailList();
+                preview.classList.remove('hidden');
+                toggleText.textContent = 'Hide Emails';
+            } else {
+                preview.classList.add('hidden');
+                toggleText.textContent = 'Show Emails';
+            }
+        }
+
+        function showEmailList() {
+            const preview = document.getElementById('emailPreview');
+            preview.innerHTML = '';
+            
+            selectedEmails.forEach((email, index) => {
+                const domain = email.split('@')[1];
+                const provider = getProvider(domain);
+                
+                const item = document.createElement('div');
+                item.className = 'email-item';
+                item.innerHTML = `
+                    <div>
+                        <strong>${index + 1}.</strong> ${email}
+                        <span class="email-domain">@${domain}</span>
+                    </div>
+                    <div>
+                        <span class="badge badge-provider">${provider}</span>
+                        <span class="badge">New</span>
+                    </div>
+                `;
+                preview.appendChild(item);
+            });
+        }
+
+        function getProvider(domain) {
+            if (domain.includes('gmail')) return 'Gmail';
+            if (domain.includes('yahoo')) return 'Yahoo';
+            if (domain.includes('outlook') || domain.includes('hotmail')) return 'Outlook';
+            if (domain.includes('.edu') || domain.includes('university')) return 'Education';
+            if (domain.includes('.gov')) return 'Government';
+            return 'Corporate';
+        }
+
+        function exportToExcel() {
+            if (selectedEmails.length === 0) {
+                alert('No emails to export!');
+                return;
+            }
+
+            const data = selectedEmails.map((email, index) => ({
+                '#': index + 1,
+                'Email Address': email,
+                'Domain': email.split('@')[1],
+                'Provider': getProvider(email.split('@')[1]),
+                'Status': 'New'
+            }));
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(data);
+            
+            ws['!cols'] = [
+                { wch: 5 },
+                { wch: 40 },
+                { wch: 25 },
+                { wch: 15 },
+                { wch: 10 }
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, 'Random 200 Emails');
+            
+            const summaryData = [
+                { 'Metric': 'Source File', 'Value': currentFile ? currentFile.name : 'N/A' },
+                { 'Metric': 'Total Emails Found', 'Value': allEmails.size },
+                { 'Metric': 'Previously Selected', 'Value': previouslySelected.size },
+                { 'Metric': 'Selected This Time', 'Value': selectedEmails.length },
+                { 'Metric': 'Extraction Date', 'Value': new Date().toLocaleString() }
+            ];
+            
+            const summaryWs = XLSX.utils.json_to_sheet(summaryData);
+            XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
+            
+            const filename = `pdf_emails_${Date.now()}.xlsx`;
+            XLSX.writeFile(wb, filename);
+            
+            alert('✅ Excel file downloaded successfully!');
+        }
+
+        function copyEmails() {
+            const emailText = selectedEmails.join('\n');
+            navigator.clipboard.writeText(emailText).then(() => {
+                alert('✅ All emails copied to clipboard!');
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalEmails').textContent = allEmails.size;
+            document.getElementById('selectedCount').textContent = selectedEmails.length;
+            document.getElementById('previousCount').textContent = previouslySelected.size;
+            
+            const available = [...allEmails].filter(email => !previouslySelected.has(email)).length;
+            document.getElementById('availableCount').textContent = available;
+        }
+
+        function resetHistory() {
+            if (confirm('⚠️ Reset selection history?\n\nPreviously selected emails will be available again.')) {
+                previouslySelected.clear();
+                localStorage.removeItem(STORAGE_KEY);
+                updateStats();
+                alert('✅ History reset successfully!');
+            }
+        }
+
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1048576) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / 1048576).toFixed(2) + ' MB';
+        }
+
+        function showAlert(type, message, targetId = null) {
+            const alertClass = `alert-${type}`;
+            const icons = {
+                success: '✅',
+                warning: '⚠️',
+                error: '❌',
+                info: 'ℹ️'
+            };
+            
+            const alert = `
+                <div class="alert ${alertClass}">
+                    <span>${icons[type]}</span>
+                    <div>${message}</div>
+                </div>
+            `;
+            
+            if (targetId) {
+                document.getElementById(targetId).innerHTML = alert;
+            }
+        }
+
+        // Drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                document.getElementById('pdfFile').files = e.dataTransfer.files;
+                handleFileUpload({ target: { files: [file] }});
+            }
+        });
+    </script>
+</body>
+</html>
